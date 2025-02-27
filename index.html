@@ -15,23 +15,59 @@
         <button onclick="addIP()">Add</button>
     </div>
     <ul id="ipList"></ul>
-    <canvas id="pingChart" width="200" height="100" style="max-width: 500px;
+    <canvas id="pingChart" width="200" height="100" style="max-width: 1500px;
     max-height: 2000px;"></canvas>
 
     <script>
         let ips = [];
         let chart;
-        let prevLatencies = {}; // Store previous latency values
+        let prevLatencies = {};
 
+        // Load saved IPs when the page loads
+        window.onload = function () {
+            const savedIPs = JSON.parse(localStorage.getItem("savedIPs"));
+            if (savedIPs) {
+                ips = savedIPs;
+                updateIPList();
+            }
+        };
+
+        // Function to save IPs to localStorage
+        function saveIPs() {
+            localStorage.setItem("savedIPs", JSON.stringify(ips));
+        }
+
+        // Function to update the displayed list of IPs
+        function updateIPList() {
+            const ipList = document.getElementById("ipList");
+            ipList.innerHTML = ""; // Clear existing list
+            ips.forEach(ip => {
+                const listItem = document.createElement("li");
+                listItem.id = `status-${ip}`;
+                listItem.innerHTML = `${ip} <button onclick="removeIP('${ip}')">❌</button>`;
+                ipList.appendChild(listItem);
+            });
+        }
+
+        // Add an IP to the list
         function addIP() {
             const ip = document.getElementById("ipInput").value.trim();
             if (ip && !ips.includes(ip)) {
                 ips.push(ip);
-                document.getElementById("ipList").innerHTML += `<li id="status-${ip}">${ip}</li>`;
+                saveIPs();
+                updateIPList();
             }
             document.getElementById("ipInput").value = "";
         }
 
+        // Remove an IP from the list
+        function removeIP(ip) {
+            ips = ips.filter(item => item !== ip);
+            saveIPs();
+            updateIPList();
+        }
+
+        // Ping the saved IPs
         async function pingIPs() {
             if (ips.length === 0) return;
             await fetch("http://localhost:3000/ping", {
@@ -41,6 +77,7 @@
             });
         }
 
+        // Update the bar chart
         async function updateChart() {
             const response = await fetch("http://localhost:3000/results");
             const data = await response.json();
@@ -52,13 +89,12 @@
             labels.forEach((ip, index) => {
                 const pingTime = values[index];
                 const listItem = document.getElementById(`status-${ip}`);
-                if (!listItem) return; // Skip if the element doesn't exist
-
+                if (!listItem) return;
 
                 if (pingTime === 0) {
                     colors.push("red");
                     listItem.style.color = "red";
-                    listItem.innerHTML = `${ip} ❌ (No Response)`;
+                    listItem.innerHTML = `${ip} ❌ (No Response) <button onclick="removeIP('${ip}')">❌</button>`;
                 } else {
                     if (!prevLatencies[ip]) prevLatencies[ip] = pingTime;
                     const diff = pingTime - prevLatencies[ip];
@@ -66,11 +102,11 @@
                     if (diff > 50) {
                         colors.push("orange");
                         listItem.style.color = "orange";
-                        listItem.innerHTML = `${ip} ⚠️ (Latency Spike: +${diff.toFixed(1)}ms)`;
+                        listItem.innerHTML = `${ip} ⚠️ (Latency Spike: +${diff.toFixed(1)}ms) <button onclick="removeIP('${ip}')">❌</button>`;
                     } else {
                         colors.push("blue");
                         listItem.style.color = "green";
-                        listItem.innerHTML = `${ip} ✅ (${pingTime.toFixed(1)} ms)`;
+                        listItem.innerHTML = `${ip} ✅ (${pingTime.toFixed(1)} ms) <button onclick="removeIP('${ip}')">❌</button>`;
                     }
 
                     prevLatencies[ip] = pingTime;
@@ -81,7 +117,7 @@
             if (!chart) {
                 const ctx = document.getElementById("pingChart").getContext("2d");
                 chart = new Chart(ctx, {
-                    type: "bar", // Keep "bar", but change axis options
+                    type: "bar",
                     data: {
                         labels: labels,
                         datasets: [{
@@ -91,7 +127,7 @@
                         }]
                     },
                     options: {
-                        indexAxis: 'y', // 🔄 Rotates the bar chart horizontally
+                        indexAxis: 'y',
                         maintainAspectRatio: false,
                         responsive: true
                     }
