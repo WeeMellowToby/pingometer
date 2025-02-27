@@ -15,18 +15,19 @@
         <button onclick="addIP()">Add</button>
     </div>
     <ul id="ipList"></ul>
-    <canvas id="pingChart" width="200" height="100" style="max-width: 1000px;
-    max-height: 500px;"></canvas>
+    <canvas id="pingChart" width="200" height="100" style="max-width: 500px;
+    max-height: 2000px;"></canvas>
 
     <script>
         let ips = [];
         let chart;
+        let prevLatencies = {}; // Store previous latency values
 
         function addIP() {
             const ip = document.getElementById("ipInput").value.trim();
             if (ip && !ips.includes(ip)) {
                 ips.push(ip);
-                document.getElementById("ipList").innerHTML += `<li>${ip}</li>`;
+                document.getElementById("ipList").innerHTML += `<li id="status-${ip}">${ip}</li>`;
             }
             document.getElementById("ipInput").value = "";
         }
@@ -43,29 +44,67 @@
         async function updateChart() {
             const response = await fetch("http://localhost:3000/results");
             const data = await response.json();
+
             const labels = Object.keys(data);
             const values = Object.values(data);
+            const colors = [];
 
+            labels.forEach((ip, index) => {
+                const pingTime = values[index];
+                const listItem = document.getElementById(`status-${ip}`);
+                if (!listItem) return; // Skip if the element doesn't exist
+
+
+                if (pingTime === 0) {
+                    colors.push("red");
+                    listItem.style.color = "red";
+                    listItem.innerHTML = `${ip} ❌ (No Response)`;
+                } else {
+                    if (!prevLatencies[ip]) prevLatencies[ip] = pingTime;
+                    const diff = pingTime - prevLatencies[ip];
+
+                    if (diff > 50) {
+                        colors.push("orange");
+                        listItem.style.color = "orange";
+                        listItem.innerHTML = `${ip} ⚠️ (Latency Spike: +${diff.toFixed(1)}ms)`;
+                    } else {
+                        colors.push("blue");
+                        listItem.style.color = "green";
+                        listItem.innerHTML = `${ip} ✅ (${pingTime.toFixed(1)} ms)`;
+                    }
+
+                    prevLatencies[ip] = pingTime;
+                }
+            });
+
+            // Update or create the chart
             if (!chart) {
                 const ctx = document.getElementById("pingChart").getContext("2d");
                 chart = new Chart(ctx, {
-                    type: "bar",
+                    type: "bar", // Keep "bar", but change axis options
                     data: {
                         labels: labels,
                         datasets: [{
                             label: "Average Ping (ms)",
-                            backgroundColor: "blue",
+                            backgroundColor: colors,
                             data: values
                         }]
+                    },
+                    options: {
+                        indexAxis: 'y', // 🔄 Rotates the bar chart horizontally
+                        maintainAspectRatio: false,
+                        responsive: true
                     }
                 });
             } else {
                 chart.data.labels = labels;
                 chart.data.datasets[0].data = values;
+                chart.data.datasets[0].backgroundColor = colors;
                 chart.update();
             }
         }
 
+        // Refresh every 5 seconds
         setInterval(() => {
             pingIPs();
             updateChart();
