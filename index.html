@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Monitor</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <h2>Ping Monitor</h2>
+    <div>
+        <input type="text" id="ipInput" placeholder="Enter IP and press Add">
+        <button onclick="addIP()">Add</button>
+    </div>
+    <ul id="ipList"></ul>
+    <canvas id="pingChart" width="400" height="200"></canvas>
+
+    <script>
+        let ips = [];
+        let chart;
+
+        function addIP() {
+            const ip = document.getElementById("ipInput").value.trim();
+            if (ip && !ips.includes(ip)) {
+                ips.push(ip);
+                document.getElementById("ipList").innerHTML += `<li>${ip}</li>`;
+            }
+            document.getElementById("ipInput").value = "";
+        }
+
+        async function pingIPs() {
+            if (ips.length === 0) return;
+            await fetch("http://localhost:3000/ping", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ips })
+            });
+        }
+
+        async function updateChart() {
+            const response = await fetch("http://localhost:3000/results");
+            const data = await response.json();
+            const labels = Object.keys(data);
+            const values = Object.values(data);
+
+            if (!chart) {
+                const ctx = document.getElementById("pingChart").getContext("2d");
+                chart = new Chart(ctx, {
+                    type: "bar",
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: "Average Ping (ms)",
+                            backgroundColor: "blue",
+                            data: values
+                        }]
+                    }
+                });
+            } else {
+                chart.data.labels = labels;
+                chart.data.datasets[0].data = values;
+                chart.update();
+            }
+        }
+
+        setInterval(() => {
+            pingIPs();
+            updateChart();
+        }, 5000);
+    </script>
+</body>
+
+</html>
