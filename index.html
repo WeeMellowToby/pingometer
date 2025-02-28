@@ -70,7 +70,7 @@
         // Ping the saved IPs
         async function pingIPs() {
             if (ips.length === 0) return;
-            await fetch("http://localhost:3000/ping", {
+            await fetch(window.location.href + "ping", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ ips })
@@ -79,7 +79,7 @@
 
         // Update the bar chart
         async function updateChart() {
-            const response = await fetch("http://localhost:3000/results");
+            const response = await fetch(window.location.href + "results");
             const data = await response.json();
 
             const labels = Object.keys(data);
