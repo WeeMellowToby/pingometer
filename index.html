@@ -82,8 +82,8 @@
         async function updateChart() {
             const response = await fetch(window.location.href + "results");
             const data = await response.json();
-            //read data and get all distinct IPs
-            const allIPs = data.map(item => item.ip);
+            //read data and get all distinct IPs, and make sure they're the same ips being requested
+            const allIPs = data.map(item => item.ip).filter(ip => ips.includes(ip));
             const distinctIPs = [...new Set(allIPs)];
             //create datasets for each IP
             const datasets = distinctIPs.map(ip => {
@@ -112,10 +112,10 @@
                 const canvasContainer = document.createElement("div");
                 canvasContainer.style.margin = "10px"; // Add some margin between charts
                 const canvas = document.createElement("canvas");
-                canvas.style.maxHeight = "275px";
-                canvas.style.maxWidth = "350px";
-                canvas.width = 350;
-                canvas.height = 275;
+                canvas.style.maxHeight = "150px";
+                canvas.style.maxWidth = "200px";
+                canvas.width = 200;
+                canvas.height = 150;
                 canvasContainer.appendChild(canvas);
                 chartsDiv.appendChild(canvasContainer);
                 const ctx = canvas.getContext("2d");
