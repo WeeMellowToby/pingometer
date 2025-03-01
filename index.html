@@ -10,13 +10,13 @@
 
 <body>
     <h2>Ping Monitor</h2>
+    <div id="charts"></div>
     <div>
         <input type="text" id="ipInput" placeholder="Enter IP and press Add">
         <button onclick="addIP()">Add</button>
     </div>
     <ul id="ipList"></ul>
-    <canvas id="pingChart" width="200" height="100" style="max-width: 1500px;
-    max-height: 2000px;"></canvas>
+
 
     <script>
         let ips = [];
@@ -70,6 +70,7 @@
         // Ping the saved IPs
         async function pingIPs() {
             if (ips.length === 0) return;
+            console.log("Pinging", ips);
             await fetch(window.location.href + "ping", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -77,67 +78,89 @@
             });
         }
 
-        // Update the bar chart
+        // Update the line charts
         async function updateChart() {
             const response = await fetch(window.location.href + "results");
             const data = await response.json();
-
-            const labels = Object.keys(data);
-            const values = Object.values(data);
-            const colors = [];
-
-            labels.forEach((ip, index) => {
-                const pingTime = values[index];
-                const listItem = document.getElementById(`status-${ip}`);
-                if (!listItem) return;
-
-                if (pingTime === 0) {
-                    colors.push("red");
-                    listItem.style.color = "red";
-                    listItem.innerHTML = `${ip} ❌ (No Response) <button onclick="removeIP('${ip}')">❌</button>`;
-                } else {
-                    if (!prevLatencies[ip]) prevLatencies[ip] = pingTime;
-                    const diff = pingTime - prevLatencies[ip];
-
-                    if (diff > 50) {
-                        colors.push("orange");
-                        listItem.style.color = "orange";
-                        listItem.innerHTML = `${ip} ⚠️ (Latency Spike: +${diff.toFixed(1)}ms) <button onclick="removeIP('${ip}')">❌</button>`;
-                    } else {
-                        colors.push("blue");
-                        listItem.style.color = "green";
-                        listItem.innerHTML = `${ip} ✅ (${pingTime.toFixed(1)} ms) <button onclick="removeIP('${ip}')">❌</button>`;
-                    }
-
-                    prevLatencies[ip] = pingTime;
-                }
+            //read data and get all distinct IPs
+            const allIPs = data.map(item => item.ip);
+            const distinctIPs = [...new Set(allIPs)];
+            //create datasets for each IP
+            const datasets = distinctIPs.map(ip => {
+                const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
+                const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+                const backgroundColor = `rgba(0, 0, 139, 0.2)`; // Dark blue with transparency
+                const borderColor = `rgb(0, 0, 139)`; // Dark blue
+                return {
+                    label: ip,
+                    data: latencies,
+                    fill: false,
+                    backgroundColor,
+                    borderColor,
+                    tension: 0.1,
+                    times
+                };
             });
-
-            // Update or create the chart
-            if (!chart) {
-                const ctx = document.getElementById("pingChart").getContext("2d");
-                chart = new Chart(ctx, {
-                    type: "bar",
+            //create a canvas with a chart for each IP address in the div with id "charts"
+            //charts need to be 500 long and 300 high, with time on the x-axis and latency on the y-axis
+            const chartsDiv = document.getElementById("charts");
+            chartsDiv.style.display = "flex"; // Set display to flex
+            chartsDiv.style.flexWrap = "wrap"; // Allow wrapping to the next line if necessary
+            let scrollPosition = window.scrollY;
+            chartsDiv.innerHTML = "";
+            distinctIPs.forEach(ip => {
+                const canvasContainer = document.createElement("div");
+                canvasContainer.style.margin = "10px"; // Add some margin between charts
+                const canvas = document.createElement("canvas");
+                canvas.style.maxHeight = "275px";
+                canvas.style.maxWidth = "350px";
+                canvas.width = 350;
+                canvas.height = 275;
+                canvasContainer.appendChild(canvas);
+                chartsDiv.appendChild(canvasContainer);
+                const ctx = canvas.getContext("2d");
+                const chart = new Chart(ctx, {
+                    type: "line",
                     data: {
-                        labels: labels,
-                        datasets: [{
-                            label: "Average Ping (ms)",
-                            backgroundColor: colors,
-                            data: values
-                        }]
+                        labels: datasets.find(dataset => dataset.label === ip).times,
+                        datasets: datasets.filter(dataset => dataset.label === ip)
                     },
                     options: {
-                        indexAxis: 'y',
-                        maintainAspectRatio: false,
-                        responsive: true
+                        elements: {
+                            point: {
+                                radius: 0
+                            }
+                        },
+                        scales: {
+                            x: {
+                                display: false,
+                                ticks: {
+                                    display: false,
+                                    callback: function (value, index, values) {
+                                        return "";
+                                    }
+                                }
+                            }
+                        },
+                        animation: false, // Disable animation
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: "Time"
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: "Latency"
+                                }
+                            }
+                        }
                     }
                 });
-            } else {
-                chart.data.labels = labels;
-                chart.data.datasets[0].data = values;
-                chart.data.datasets[0].backgroundColor = colors;
-                chart.update();
-            }
+            });
+            window.scrollTo(0, scrollPosition);
         }
 
         // Refresh every 5 seconds

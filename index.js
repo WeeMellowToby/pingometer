@@ -6,15 +6,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-let pingResults = {};
+//format for ping results should be [{ip:8.8.8.8, latency: 10, time: 1740841532}] where time is in unix timestamp, latency is in ms and ip is the ip address of the server
+let pingResults = [];
 
 // Ping function that updates results
 const pingIPs = async (ips) => {
     for (let ip of ips) {
         const res = await ping.promise.probe(ip);
-        if (!pingResults[ip]) pingResults[ip] = [];
-        pingResults[ip].push(res.time); // Store ping time
-        if (pingResults[ip].length > 10) pingResults[ip].shift(); // Keep last 10 pings
+        let pingResult = {
+            "ip": ip,
+            "latency": res.time,
+            "time": Math.floor(Date.now() / 1000)
+        }
+        pingResults.push(pingResult);
     }
 };
 
@@ -27,13 +31,7 @@ app.post("/ping", async (req, res) => {
 
 // API endpoint to get average ping times
 app.get("/results", (req, res) => {
-    const averages = {};
-    for (let ip in pingResults) {
-        let times = pingResults[ip].filter(t => t !== "unknown"); // Filter bad results
-        let avg = times.length ? times.reduce((a, b) => a + b, 0) / times.length : 0;
-        averages[ip] = avg;
-    }
-    res.json(averages);
+    res.json(pingResults);
 });
 app.get("/", (req, res) => {
     //send index.html
