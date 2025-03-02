@@ -39,5 +39,10 @@ app.get("/", (req, res) => {
     //send index.html
     res.sendFile(__dirname + "/index.html");
 });
+app.get("/pingometer.js", (req, res) => {
+    //send pingometer.js
+    res.sendFile(__dirname + "/pingometer.js");
+}
+);
 
 app.listen(3000, () => console.log("Server running on port 3000"));
