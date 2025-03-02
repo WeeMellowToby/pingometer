@@ -32,6 +32,11 @@ function updateIPList() {
 // Add an IP to the list
 function addIP() {
     const ip = document.getElementById("ipInput").value.trim();
+    // check if IP mathces the regex ^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$
+    if (!ip.match(/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/)) {
+        alert("Invalid IP address");
+        return;
+    }
     const name = document.getElementById("nameInput").value.trim();
     item = { ip: ip, name: name };
     if (ip && !ipList.includes(item)) {
@@ -154,6 +159,13 @@ async function updateChart() {
                         title: {
                             display: true,
                             text: "Latency"
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            boxWidth: 0
                         }
                     }
                 }
