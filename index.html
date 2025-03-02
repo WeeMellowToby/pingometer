@@ -91,11 +91,16 @@
                 const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
                 //calculate average ping and if last ping is significantly more than average, change color to orange
                 const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-                console.log(averageLatency)
-                const lastLatency = latencies[latencies.length - 1];
-                console.log(lastLatency)
-                const backgroundColor = lastLatency - 50 < averageLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-                const borderColor = lastLatency - 50 < averageLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14,0.2)`; // Dark blue or orange if last ping is significantly more than average
+                let last3Latencies = latencies.slice(-3);
+                let highLatency = true;
+                for (let i = 0; i < last3Latencies.length; i++) {
+                    if (last3Latencies[i] - 50 < averageLatency) {
+                        highLatency = false;
+                        break;
+                    }
+                }
+                const backgroundColor = highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
+                const borderColor = highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14,0.2)`; // Dark blue or orange if last ping is significantly more than average
                 return {
                     label: ip,
                     data: latencies,
