@@ -151,13 +151,13 @@ async function updateChart() {
                 scales: {
                     x: {
                         title: {
-                            display: true,
+                            display: false,
                             text: "Time"
                         }
                     },
                     y: {
                         title: {
-                            display: true,
+                            display: false,
                             text: "Latency"
                         }
                     }
