@@ -15,11 +15,11 @@ const pingIPs = async (ips) => {
         const res = await ping.promise.probe(ip);
         let pingResult = {
             "ip": ip,
-            "latency": res.time,
+            "latency": res.alive ? res.time : 0,
             "time": Math.floor(Date.now() / 1000)
         }
         //remove results older than 15 minutes
-        if (pingResults != null) { pingResults.filter((result) => result.time + 900 < Date.now() / 1000) };
+        if (pingResults != null) { pingResults = pingResults.filter((result) => result.time + 900 < Date.now() / 1000) }
         pingResults.push(pingResult);
     }
 };

@@ -9,7 +9,7 @@
 </head>
 
 <body>
-    <h2>Ping Monitor</h2>
+    <h2>Ping Monitor (v2/3/25)</h2>
     <div id="charts"></div>
     <div>
         <input type="text" id="ipInput" placeholder="Enter IP and press Add">
@@ -92,15 +92,22 @@
                 //calculate average ping and if last ping is significantly more than average, change color to orange
                 const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
                 let last3Latencies = latencies.slice(-3);
+                console.log(last3Latencies);
                 let highLatency = true;
+                let noRes = true;
                 for (let i = 0; i < last3Latencies.length; i++) {
                     if (last3Latencies[i] - 50 < averageLatency) {
                         highLatency = false;
-                        break;
                     }
+                    if (last3Latencies[i] != 0) {
+                        noRes = false;
+                    }
+                    console.log(last3Latencies[i]);
                 }
-                const backgroundColor = !highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-                const borderColor = !highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14,0.2)`; // Dark blue or orange if last ping is significantly more than average
+
+                console.log(latencies);
+                const backgroundColor = noRes ? `rgba(255, 0, 0,0.5)` : !highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
+                const borderColor = noRes ? `rgb(255, 0, 0)` : !highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
                 return {
                     label: ip,
                     data: latencies,
