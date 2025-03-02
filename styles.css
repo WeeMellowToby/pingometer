@@ -1,0 +1,15 @@
+img {
+    position: static;
+    height: 100px;
+    z-index: 1000;
+    /* Ensure the image is on top of other elements */
+}
+
+footer {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    text-align: right;
+    background: transparent;
+}

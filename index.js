@@ -44,5 +44,14 @@ app.get("/pingometer.js", (req, res) => {
     res.sendFile(__dirname + "/pingometer.js");
 }
 );
-
+app.get("/a2it-logo.png", (req, res) => {
+    //send a2it-logo.png
+    res.sendFile(__dirname + "/a2it-logo.png");
+}
+);
+app.get("/styles.css", (req, res) => {
+    //send style.css
+    res.sendFile(__dirname + "/styles.css");
+}
+);
 app.listen(3000, () => console.log("Server running on port 3000"));
