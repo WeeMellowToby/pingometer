@@ -99,8 +99,8 @@
                         break;
                     }
                 }
-                const backgroundColor = highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-                const borderColor = highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14,0.2)`; // Dark blue or orange if last ping is significantly more than average
+                const backgroundColor = !highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
+                const borderColor = !highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14,0.2)`; // Dark blue or orange if last ping is significantly more than average
                 return {
                     label: ip,
                     data: latencies,
