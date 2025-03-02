@@ -18,6 +18,8 @@ const pingIPs = async (ips) => {
             "latency": res.time,
             "time": Math.floor(Date.now() / 1000)
         }
+        //remove results older than 15 minutes
+        if (pingResults != null) { pingResults.filter((result) => result.time + 900 < Date.now() / 1000) };
         pingResults.push(pingResult);
     }
 };
