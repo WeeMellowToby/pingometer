@@ -75,6 +75,7 @@ async function updateChart() {
     const distinctIPs = [...new Set(allIPs)].sort();
     //create datasets for each IP
     const datasets = distinctIPs.map(ip => {
+        const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
         const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
         const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
         //calculate average ping and if last ping is significantly more than average, change color to orange
@@ -88,11 +89,13 @@ async function updateChart() {
             }
             if (last3Latencies[i] != 0) {
                 noRes = false;
+
             }
         }
-
-        const backgroundColor = noRes ? `rgba(255, 0, 0,0.5)` : !highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-        const borderColor = noRes ? `rgb(255, 0, 0)` : !highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
+        if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
+        let acknowledged = ipList[ipListIndex].acknowledged;
+        const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
+        const borderColor = noRes && !acknowledged ? `rgb(255, 0, 0)` : !highLatency || acknowledged ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
         return {
             label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
             data: latencies,
@@ -111,8 +114,13 @@ async function updateChart() {
     let scrollPosition = window.scrollY;
     chartsDiv.innerHTML = "";
     distinctIPs.forEach(ip => {
-        const canvasContainer = document.createElement("div");
-        canvasContainer.style.margin = "10px"; // Add some margin between charts
+
+        const canvasContainer = document.createElement("button");
+        canvasContainer.className = "chartButton";
+        canvasContainer.onclick = function () {
+            ipList[ipList.indexOf(ipList.find(item => item.ip === ip))].acknowledged = true;
+            updateChartData();
+        }
         const canvas = document.createElement("canvas");
         canvas.style.maxHeight = "150px";
         canvas.style.maxWidth = "200px";
@@ -181,6 +189,7 @@ async function updateChartData() {
     const allIPs = data.map(item => item.ip).filter(ip => ipsOnly.includes(ip));
     const distinctIPs = [...new Set(allIPs)].sort();
     const datasets = distinctIPs.map(ip => {
+        const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
         const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
         const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
         //calculate average ping and if last ping is significantly more than average, change color to orange
@@ -196,9 +205,11 @@ async function updateChartData() {
                 noRes = false;
             }
         }
-
-        const backgroundColor = noRes ? `rgba(255, 0, 0,0.5)` : !highLatency ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-        const borderColor = noRes ? `rgb(255, 0, 0)` : !highLatency ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
+        if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
+        let acknowledged = ipList[ipListIndex].acknowledged;
+        const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
+        const borderColor = noRes && !acknowledged ? `rgb(255, 0, 0)` : !highLatency || acknowledged ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
+        console.log(backgroundColor);
         return {
             label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
             data: latencies,
