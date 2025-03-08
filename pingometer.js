@@ -69,43 +69,11 @@ async function updateChart() {
     await pingIPs();
     const response = await fetch(window.location.href + "results");
     const data = await response.json();
-    let ipsOnly = ipList.map(item => item.ip);
-    //read data and get all distinct IPs, and make sure they're the same ips being requested
-    const allIPs = data.map(item => item.ip).filter(ip => ipsOnly.includes(ip));
+    const allIPs = data.map(item => item.ip);
     const distinctIPs = [...new Set(allIPs)].sort();
-    //create datasets for each IP
-    const datasets = distinctIPs.map(ip => {
-        const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
-        const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
-        const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        //calculate average ping and if last ping is significantly more than average, change color to orange
-        const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-        let last3Latencies = latencies.slice(-3);
-        let highLatency = true;
-        let noRes = true;
-        for (let i = 0; i < last3Latencies.length; i++) {
-            if (last3Latencies[i] - 50 < averageLatency) {
-                highLatency = false;
-            }
-            if (last3Latencies[i] != 0) {
-                noRes = false;
+    //read data and get all distinct IPs, and make sure they're the same ips being requested
+    datasets = generateDatasets(data);
 
-            }
-        }
-        if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
-        let acknowledged = ipList[ipListIndex].acknowledged;
-        const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-        const borderColor = noRes && !acknowledged ? `rgb(255, 0, 0)` : !highLatency || acknowledged ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
-        return {
-            label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
-            data: latencies,
-            fill: true,
-            backgroundColor,
-            borderColor,
-            tension: 0.1,
-            times
-        };
-    });
     //create a canvas with a chart for each IP address in the div with id "charts"
     //charts need to be 500 long and 300 high, with time on the x-axis and latency on the y-axis
     const chartsDiv = document.getElementById("charts");
@@ -113,8 +81,8 @@ async function updateChart() {
     chartsDiv.style.flexWrap = "wrap"; // Allow wrapping to the next line if necessary
     let scrollPosition = window.scrollY;
     chartsDiv.innerHTML = "";
-    distinctIPs.forEach(ip => {
 
+    distinctIPs.forEach(ip => {
         const canvasContainer = document.createElement("button");
         canvasContainer.className = "chartButton";
         canvasContainer.onclick = function () {
@@ -184,10 +152,23 @@ async function updateChart() {
 async function updateChartData() {
     const response = await fetch(window.location.href + "results");
     const data = await response.json();
-    let ipsOnly = ipList.map(item => item.ip);
+    const allIPs = data.map(item => item.ip);
     //read data and get all distinct IPs, and make sure they're the same ips being requested
+    datasets = generateDatasets(data);
+    //loop through all IPs and update the data in the chart
+    const distinctIPs = [...new Set(allIPs)].sort();
+    distinctIPs.forEach(ip => {
+        const chart = ipList.find(item => item.ip === ip).chart;
+        chart.data.labels = datasets.find(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")").times;
+        chart.data.datasets = datasets.filter(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")");
+        chart.update();
+    });
+}
+function generateDatasets(data) {
+    let ipsOnly = ipList.map(item => item.ip);
     const allIPs = data.map(item => item.ip).filter(ip => ipsOnly.includes(ip));
     const distinctIPs = [...new Set(allIPs)].sort();
+    //create datasets for each IP
     const datasets = distinctIPs.map(ip => {
         const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
         const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
@@ -203,13 +184,13 @@ async function updateChartData() {
             }
             if (last3Latencies[i] != 0) {
                 noRes = false;
+
             }
         }
         if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
         let acknowledged = ipList[ipListIndex].acknowledged;
         const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
         const borderColor = noRes && !acknowledged ? `rgb(255, 0, 0)` : !highLatency || acknowledged ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
-        console.log(backgroundColor);
         return {
             label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
             data: latencies,
@@ -220,13 +201,7 @@ async function updateChartData() {
             times
         };
     });
-    //loop through all IPs and update the data in the chart
-    distinctIPs.forEach(ip => {
-        const chart = ipList.find(item => item.ip === ip).chart;
-        chart.data.labels = datasets.find(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")").times;
-        chart.data.datasets = datasets.filter(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")");
-        chart.update();
-    });
+    return datasets;
 }
 // Refresh every 5 seconds
 setInterval(() => {
