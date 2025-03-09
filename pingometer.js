@@ -165,6 +165,7 @@ async function updateChartData() {
     });
 }
 function generateDatasets(data) {
+    let bodyColor = "white";
     let ipsOnly = ipList.map(item => item.ip);
     const allIPs = data.map(item => item.ip).filter(ip => ipsOnly.includes(ip));
     const distinctIPs = [...new Set(allIPs)].sort();
@@ -187,6 +188,13 @@ function generateDatasets(data) {
 
             }
         }
+        if ((noRes || highLatency) && !ipList[ipListIndex].acknowledged) {
+            console.log(ipList[ipListIndex].acknowledged);
+            console.log("setting body color to red");
+            bodyColor = "darkred";
+        } else if (noRes || highLatency && bodyColor === "white") {
+            bodyColor = "orange";
+        }
         if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
         let acknowledged = ipList[ipListIndex].acknowledged;
         const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
@@ -201,6 +209,9 @@ function generateDatasets(data) {
             times
         };
     });
+    console.log(bodyColor);
+    console.log(ipList)
+    document.body.style.backgroundColor = bodyColor;
     return datasets;
 }
 // Refresh every 5 seconds
