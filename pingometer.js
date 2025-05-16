@@ -86,7 +86,7 @@ async function updateChart() {
         const canvasContainer = document.createElement("button");
         canvasContainer.className = "chartButton";
         canvasContainer.onclick = function () {
-            ipList[ipList.indexOf(ipList.find(item => item.ip === ip))].acknowledged = true;
+            ipList[ipList.indexOf(ipList.find(item => item.ip === ip))].needsAcknowledgement = false;
             updateChartData();
         }
         const canvas = document.createElement("canvas");
@@ -174,31 +174,11 @@ function generateDatasets(data) {
         const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
         const latencies = data.filter(item => item.ip === ip).map(item => item.latency);
         const times = data.filter(item => item.ip === ip).map(item => new Date(item.time * 1000).toLocaleTimeString('en-UK', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }));
-        //calculate average ping and if last ping is significantly more than average, change color to orange
-        const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-        let last3Latencies = latencies.slice(-3);
-        let highLatency = true;
-        let noRes = true;
-        for (let i = 0; i < last3Latencies.length; i++) {
-            if (last3Latencies[i] - 50 < averageLatency) {
-                highLatency = false;
-            }
-            if (last3Latencies[i] != 0) {
-                noRes = false;
-
-            }
-        }
-        if ((noRes || highLatency) && !ipList[ipListIndex].acknowledged) {
-            console.log(ipList[ipListIndex].acknowledged);
-            console.log("setting body color to red");
-            bodyColor = "darkred";
-        } else if (noRes || highLatency && bodyColor === "white") {
-            bodyColor = "orange";
-        }
-        if (!noRes && !highLatency) { ipList[ipListIndex].acknowledged = false; }
-        let acknowledged = ipList[ipListIndex].acknowledged;
-        const backgroundColor = noRes && !acknowledged ? `rgba(255, 0, 0,0.5)` : !highLatency || acknowledged ? `rgba(0,0,139,0.2)` : `rgba(249, 105, 14,0.2)`; // Dark blue with transparency or orange if last ping is significantly more than average
-        const borderColor = noRes && !acknowledged ? `rgb(255, 0, 0)` : !highLatency || acknowledged ? `rgb(0, 0, 139)` : `rgb(249, 105, 14)`; // Dark blue or orange if last ping is significantly more than average
+        //get the color for each graph
+        let colors = getColor(ip, latencies, bodyColor);
+        const backgroundColor = colors[0];
+        const borderColor = colors[1];
+        bodyColor = colors[2];
         return {
             label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
             data: latencies,
@@ -213,6 +193,40 @@ function generateDatasets(data) {
     console.log(ipList)
     document.body.style.backgroundColor = bodyColor;
     return datasets;
+}
+function getColor(ip, latencies, bodyColor) {
+    let ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
+    //calculate average ping and if last ping is significantly more than average, change color to orange
+    const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
+    let last3Latencies = latencies.slice(-3);
+    let highLatency = true;
+    let noRes = true;
+    for (let i = 0; i < last3Latencies.length; i++) {
+        if (last3Latencies[i] - 50 < averageLatency) {
+            highLatency = false;
+        }
+        if (last3Latencies[i] != 0) {
+            noRes = false;
+        }
+    }
+    //if high latency or no res, then acknowledgement is needed
+    if (highLatency || noRes) {
+        ipList[ipListIndex].needsAcknowledgement = true;
+    }
+    //if pings good then blue, if pings fail, red, if pings return but error not acknowledged, graph goes amber
+    colors = ["rgba(0,0,139,0.2)", "rgb(0, 0, 139)", bodyColor];
+    //if pings fail then red
+    if (noRes || highLatency) {
+        colors[1] = "rgb(255, 0, 0)";
+        colors[0] = "rgba(255, 0, 0,0.5)";
+        colors[2] = "darkred";
+    } else if (ipList[ipListIndex].needsAcknowledgement) {
+        //if pings return but error not acknowledged, graph goes amber
+        colors[1] = "rgb(249, 105, 14)";
+        colors[0] = "rgba(249, 105, 14,0.2)";
+        if (bodyColor === "white") { colors[2] = "orange" }
+    }
+    return colors
 }
 // Refresh every 5 seconds
 setInterval(() => {
