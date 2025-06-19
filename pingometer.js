@@ -189,8 +189,6 @@ function generateDatasets(data) {
             times
         };
     });
-    console.log(bodyColor);
-    console.log(ipList)
     document.body.style.backgroundColor = bodyColor;
     return datasets;
 }

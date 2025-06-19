@@ -1,3 +1,4 @@
+const dotenv = require('dotenv/config');
 const express = require("express");
 const ping = require("ping");
 const cors = require("cors");
@@ -44,6 +45,11 @@ app.get("/pingometer.js", (req, res) => {
     res.sendFile(__dirname + "/pingometer.js");
 }
 );
+app.get("/weather.js", (req, res) => {
+    //send weather.js
+    res.sendFile(__dirname + "/weather.js");
+}
+);
 app.get("/a2it-logo.png", (req, res) => {
     //send a2it-logo.png
     res.sendFile(__dirname + "/a2it-logo.png");
@@ -54,4 +60,7 @@ app.get("/styles.css", (req, res) => {
     res.sendFile(__dirname + "/styles.css");
 }
 );
+app.get("/weatherKey", (req, res) => {
+    res.json({ key: process.env.WUNDERGROUND })
+})
 app.listen(3000, () => console.log("Server running on port 3000"));
