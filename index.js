@@ -61,6 +61,9 @@ app.get("/styles.css", (req, res) => {
 }
 );
 app.get("/weatherKey", (req, res) => {
+    if (!process.env.WUNDERGROUND) {
+        res.json({ key: "" })
+    }
     res.json({ key: process.env.WUNDERGROUND })
 })
 app.listen(3000, () => console.log("Server running on port 3000"));
