@@ -1,4 +1,4 @@
-var stationID = ""
+var stationID = localStorage.getItem("stationID")
 var apikey = ""
 
 async function getAPIkey() {
@@ -13,7 +13,7 @@ function SetWeatherStation() {
     GetWeather(stationID)
 }
 async function GetWeather(stationID) {
-    if (apikey == "" || stationID == "") {
+    if (apikey == "" || stationID == null) {
         return;
     }
     let url = `https://api.weather.com/v2/pws/observations/current?stationId=${stationID}&format=json&units=m&apiKey=${apikey}`
