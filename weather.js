@@ -10,6 +10,7 @@ async function getAPIkey() {
 function SetWeatherStation() {
     const weatherInput = document.getElementById("weatherStation").value.trim()
     stationID = weatherInput
+    localStorage.setItem("stationID", stationID)
     GetWeather(stationID)
 }
 async function GetWeather(stationID) {
