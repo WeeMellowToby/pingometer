@@ -10,19 +10,20 @@
 </head>
 
 <body>
-    <h2>Ping Monitor (v19/6/25)</h2>
+    <h2>Pingometer (v30/6/25)</h2>
     <div id="weather"></div>
     <div id="charts"></div>
-    <div>
-        <input type="text" id="ipInput" placeholder="Enter IP and press Add">
-        <input type="text" id="nameInput" placeholder="Enter name and press Add">
-        <button onclick="addIP()">Add</button>
+    <div class="input-group">
+        <input type="text" id="weatherStation" placeholder="Enter Weather Station ID">
+        <button onclick="SetWeatherStation()" class="addButton">Set</button>
     </div>
-    <div>
-        <input type="text" id="weatherStation" placeholder="Enter Weather Station ID and press set">
-        <button onclick="SetWeatherStation()">Set</button>
+    <div class="input-group">
+        <input type="text" id="ipInput" class="ip-input" placeholder="Enter IP and press Add">
+        <input type="text" id="nameInput" class="name-input" placeholder="Enter name and press Add">
+        <button onclick="addIP()" class="addButton">Add</button>
     </div>
-    <ul id="ipList"></ul>
+
+    <table id="ipList"></table>
 
 
     <script src="pingometer.js"></script>

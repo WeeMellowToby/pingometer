@@ -15,16 +15,32 @@ function saveIPs() {
     localStorage.setItem("IPList", JSON.stringify(ipList.map(item => ({ ip: item.ip, name: item.name }))));
 }
 
-// Function to update the displayed list of IPs
-function updateIPList() {
+async function updateIPTable(data) {
     const ipListDOM = document.getElementById("ipList");
-    ipListDOM.innerHTML = ""; // Clear existing list
+    ipListDOM.innerHTML = `<tr>
+            <th>IP</th>
+            <th>Name</th>
+            <th>Status</th>
+            <th></th>
+        </tr>`; // Clear existing list
     ipList.forEach(ip => {
-        const listItem = document.createElement("li");
+        let online = false
+        const latencies = data.filter(item => item.ip === ip.ip).map(item => item.latency);
+        if (latencies[latencies.length - 1] != 0) {
+            online = true;
+        }
+        const listItem = document.createElement("tr");
         listItem.id = `status-${ip.ip}`;
-        listItem.innerHTML = `${ip.ip} (${ip.name})<button onclick="removeIP('${ip.ip}')">❌</button>`;
+        listItem.innerHTML = `<td>${ip.ip} </td> 
+        <td>${ip.name}</td>
+        <td>${online ? "Online" : "Offline"}</td>
+        <td><button onclick="removeIP('${ip.ip}')" class="removeButton">&#10006;</button></td>`;
         ipListDOM.appendChild(listItem);
     });
+}
+
+// Function to update the displayed list of IPs
+function updateIPList() {
     updateChart();
 }
 
@@ -69,11 +85,11 @@ async function updateChart() {
     await pingIPs();
     const response = await fetch(window.location.href + "results");
     const data = await response.json();
+    updateIPTable(data);
     const allIPs = data.map(item => item.ip);
     const distinctIPs = [...new Set(allIPs)].sort();
     //read data and get all distinct IPs, and make sure they're the same ips being requested
     datasets = generateDatasets(data);
-
     //create a canvas with a chart for each IP address in the div with id "charts"
     //charts need to be 500 long and 300 high, with time on the x-axis and latency on the y-axis
     const chartsDiv = document.getElementById("charts");
@@ -83,6 +99,9 @@ async function updateChart() {
     chartsDiv.innerHTML = "";
 
     distinctIPs.forEach(ip => {
+        if (!ipList.find(item => item.ip === ip)) {
+            return;
+        }
         const canvasContainer = document.createElement("button");
         canvasContainer.className = "chartButton";
         canvasContainer.onclick = function () {
@@ -100,8 +119,8 @@ async function updateChart() {
         const chart = new Chart(ctx, {
             type: "line",
             data: {
-                labels: datasets.find(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")").times,
-                datasets: datasets.filter(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")")
+                labels: datasets.find(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name).times,
+                datasets: datasets.filter(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name)
             },
             options: {
                 elements: {
@@ -152,15 +171,19 @@ async function updateChart() {
 async function updateChartData() {
     const response = await fetch(window.location.href + "results");
     const data = await response.json();
+    updateIPTable(data);
     const allIPs = data.map(item => item.ip);
     //read data and get all distinct IPs, and make sure they're the same ips being requested
     datasets = generateDatasets(data);
     //loop through all IPs and update the data in the chart
     const distinctIPs = [...new Set(allIPs)].sort();
     distinctIPs.forEach(ip => {
-        const chart = ipList.find(item => item.ip === ip).chart;
-        chart.data.labels = datasets.find(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")").times;
-        chart.data.datasets = datasets.filter(dataset => dataset.label === ip + " (" + ipList.find(item => item.ip === ip).name + ")");
+        const chart = ipList.find(item => item.ip === ip.ip) ? ipList.find(item => item.ip === ip.ip).chart : null;
+        if (chart == null) {
+            return;
+        }
+        chart.data.labels = datasets.find(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name).times;
+        chart.data.datasets = datasets.filter(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name);
         chart.update();
     });
 }
@@ -180,7 +203,7 @@ function generateDatasets(data) {
         const borderColor = colors[1];
         bodyColor = colors[2];
         return {
-            label: ip + " (" + ipList.find(item => item.ip === ip).name + ")",
+            label: ip + " - " + ipList.find(item => item.ip === ip).name,
             data: latencies,
             fill: true,
             backgroundColor,

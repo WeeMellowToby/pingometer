@@ -17,6 +17,7 @@ async function GetWeather(stationID) {
     if (apikey == "" || stationID == null) {
         return;
     }
+    console.log(stationID)
     let url = `https://api.weather.com/v2/pws/observations/current?stationId=${stationID}&format=json&units=m&apiKey=${apikey}`
     let response = await fetch(url)
     let data = await response.json()
