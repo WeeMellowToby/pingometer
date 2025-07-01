@@ -107,3 +107,8 @@ table {
 h2 {
     font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
 }
+
+#weather {
+    font-family: 'Trebuchet MS', 'Tahoma', sans-serif;
+    text-align: right;
+}
