@@ -178,10 +178,7 @@ async function updateChartData() {
     //loop through all IPs and update the data in the chart
     const distinctIPs = [...new Set(allIPs)].sort();
     distinctIPs.forEach(ip => {
-        const chart = ipList.find(item => item.ip === ip.ip) ? ipList.find(item => item.ip === ip.ip).chart : null;
-        if (chart == null) {
-            return;
-        }
+        const chart = ipList.find(item => item.ip === ip) ? ipList.find(item => item.ip === ip).chart : null;
         chart.data.labels = datasets.find(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name).times;
         chart.data.datasets = datasets.filter(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name);
         chart.update();
