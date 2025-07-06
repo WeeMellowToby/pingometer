@@ -1,5 +1,11 @@
 let ipList = [];
 
+const COLORS = [
+    ["rgba(0,0,139,0.2)", "rgb(0, 0, 139)", "white"],
+    ["rgba(249, 105, 14,0.2)", "rgb(249, 105, 14)", "orange"],
+    ["rgba(255, 0, 0,0.5)", "rgb(255, 0, 0)", "darkred"]
+]
+const IP_REGEX = /^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/;
 // Load saved IPs when the page loads
 window.onload = function () {
     //ips will be saved as an array of objects {ip: 8.8.8.8, name: Google DNS}
@@ -48,7 +54,7 @@ function updateIPList() {
 function addIP() {
     const ip = document.getElementById("ipInput").value.trim();
     // check if IP matches the regex ^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$
-    if (!ip.match(/^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$/)) {
+    if (!ip.match(IP_REGEX)) {
         alert("Invalid IP address");
         return;
     }
@@ -93,19 +99,19 @@ async function updateChart() {
     //create a canvas with a chart for each IP address in the div with id "charts"
     //charts need to be 500 long and 300 high, with time on the x-axis and latency on the y-axis
     const chartsDiv = document.getElementById("charts");
-    chartsDiv.style.display = "flex"; // Set display to flex
-    chartsDiv.style.flexWrap = "wrap"; // Allow wrapping to the next line if necessary
     let scrollPosition = window.scrollY;
     chartsDiv.innerHTML = "";
 
     distinctIPs.forEach(ip => {
-        if (!ipList.find(item => item.ip === ip)) {
+        const IP_LIST_ITEM = ipList.find(item => item.ip === ip);
+        //check if IP is in the list
+        if (!IP_LIST_ITEM) {
             return;
         }
         const canvasContainer = document.createElement("button");
         canvasContainer.className = "chartButton";
         canvasContainer.onclick = function () {
-            ipList[ipList.indexOf(ipList.find(item => item.ip === ip))].needsAcknowledgement = false;
+            ipList[ipList.indexOf(IP_LIST_ITEM)].needsAcknowledgement = false;
             updateChartData();
         }
         const canvas = document.createElement("canvas");
@@ -119,8 +125,8 @@ async function updateChart() {
         const chart = new Chart(ctx, {
             type: "line",
             data: {
-                labels: datasets.find(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name).times,
-                datasets: datasets.filter(dataset => dataset.label === ip + " - " + ipList.find(item => item.ip === ip).name)
+                labels: datasets.find(dataset => dataset.label === ip + " - " + IP_LIST_ITEM.name).times,
+                datasets: datasets.filter(dataset => dataset.label === ip + " - " + IP_LIST_ITEM.name)
             },
             options: {
                 elements: {
@@ -164,7 +170,7 @@ async function updateChart() {
             }
         });
         //set chart variable in ipList object to the chart object
-        ipList[ipList.indexOf(ipList.find(item => item.ip === ip))].chart = chart;
+        ipList[ipList.indexOf(IP_LIST_ITEM)].chart = chart;
     });
     window.scrollTo(0, scrollPosition);
 }
@@ -213,36 +219,28 @@ function generateDatasets(data) {
     return datasets;
 }
 function getColor(ip, latencies, bodyColor) {
-    let ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
+    const ipListIndex = ipList.indexOf(ipList.find(item => item.ip === ip));
     //calculate average ping and if last ping is significantly more than average, change color to orange
     const averageLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
-    let last3Latencies = latencies.slice(-3);
-    let highLatency = true;
-    let noRes = true;
-    for (let i = 0; i < last3Latencies.length; i++) {
-        if (last3Latencies[i] - 50 < averageLatency) {
-            highLatency = false;
-        }
-        if (last3Latencies[i] != 0) {
-            noRes = false;
-        }
-    }
+    const last3Latencies = latencies.slice(-3);
+    const highLatency = last3Latencies.every(l => l - 50 > averageLatency);
+    const noRes = last3Latencies.every(l => l === 0);
     //if high latency or no res, then acknowledgement is needed
     if (highLatency || noRes) {
         ipList[ipListIndex].needsAcknowledgement = true;
     }
     //if pings good then blue, if pings fail, red, if pings return but error not acknowledged, graph goes amber
-    colors = ["rgba(0,0,139,0.2)", "rgb(0, 0, 139)", bodyColor];
+    let colors = COLORS[0];
+    //other colors take priority
+    colors[2] = bodyColor;
     //if pings fail then red
     if (noRes || highLatency) {
-        colors[1] = "rgb(255, 0, 0)";
-        colors[0] = "rgba(255, 0, 0,0.5)";
-        colors[2] = "darkred";
+        return COLORS[2]
     } else if (ipList[ipListIndex].needsAcknowledgement) {
         //if pings return but error not acknowledged, graph goes amber
-        colors[1] = "rgb(249, 105, 14)";
-        colors[0] = "rgba(249, 105, 14,0.2)";
-        if (bodyColor === "white") { colors[2] = "orange" }
+        colors = COLORS[1]
+        //red takes priority with background
+        if (bodyColor !== "white") { colors[2] = bodyColor }
     }
     return colors
 }
