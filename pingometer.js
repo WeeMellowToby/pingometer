@@ -27,6 +27,8 @@ async function updateIPTable(data) {
             <th>IP</th>
             <th>Name</th>
             <th>Status</th>
+            <th>Average Ping /ms</th>
+            <th>Latest Ping /ms</th>
             <th></th>
         </tr>`; // Clear existing list
     ipList.forEach(ip => {
@@ -35,11 +37,14 @@ async function updateIPTable(data) {
         if (latencies[latencies.length - 1] != 0) {
             online = true;
         }
+        const averageLatency = latencies.length ? latencies.reduce((sum, num) => sum + num, 0) / latencies.length : 0
         const listItem = document.createElement("tr");
         listItem.id = `status-${ip.ip}`;
         listItem.innerHTML = `<td>${ip.ip} </td> 
         <td>${ip.name}</td>
         <td>${online ? "Online" : "Offline"}</td>
+        <td>${Math.round(averageLatency)}</td>
+        <td>${latencies[latencies.length - 1]}</td>
         <td><button onclick="removeIP('${ip.ip}')" class="removeButton">&#10006;</button></td>`;
         ipListDOM.appendChild(listItem);
     });
@@ -142,24 +147,27 @@ async function updateChart() {
                             callback: function (value, index, values) {
                                 return "";
                             }
-                        }
-                    }
-                },
-                animation: false, // Disable animation
-                scales: {
-                    x: {
-                        title: {
+                        },
+                        grid: {
                             display: false,
-                            text: "Time"
-                        }
+                            drawOnChartArea: false,
+                            drawTicks: false,
+                        },
                     },
                     y: {
                         title: {
                             display: false,
                             text: "Latency"
-                        }
+                        },
+                        grid: {
+                            display: false,
+                            drawOnChartArea: false,
+                            drawTicks: false,
+                        },
                     }
+
                 },
+                animation: false, // Disable animation
                 plugins: {
                     legend: {
                         labels: {
