@@ -1,4 +1,4 @@
-import { state } from "../utils/state.js";
+import { save, state } from "../utils/state.js";
 var apikey = "";
 
 async function getAPIkey() {
@@ -9,8 +9,8 @@ async function getAPIkey() {
 }
 function SetWeatherStation() {
     const weatherInput = document.getElementById("weatherStation").value.trim();
-    weatherID = weatherInput;
-
+    state.weatherID = weatherInput;
+    save();
     getWeather(state.weatherID);
 }
 async function getWeather(stationID) {
