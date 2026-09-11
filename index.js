@@ -12,17 +12,17 @@ let pingResults = [];
 
 // Ping function that updates results
 const pingIPs = async (ips) => {
-    for (let ip of ips) {
+    const results = await Promise.all(ips.map(async (ip) => {
         const res = await ping.promise.probe(ip);
-        let pingResult = {
-            "ip": ip,
-            "latency": res.alive ? res.time : 0,
-            "time": Math.floor(Date.now() / 1000)
+        return {
+            ip,
+            latency: res.alive ? res.time : 0,
+            time: Math.floor(Date.now() / 1000)
         };
-        //remove results older than 15 minutes
-        if (pingResults != null) { pingResults = pingResults.filter((result) => result.time + 900 > Date.now() / 1000); }
-        pingResults.push(pingResult);
-    }
+    }));
+
+    pingResults = pingResults.filter((result) => result.time + 900 > Date.now() / 1000);
+    pingResults.push(...results);
 };
 
 // API endpoint to start pinging

@@ -24,6 +24,9 @@ export function getIP(ip) {
 }
 export function getIPStatus(ipListItem) {
     const latencies = ipListItem.latencies.map((l) => l.latency);
+    if (latencies.length === 0) {
+        return ipStatusCodes.UP;
+    }
     const averageLatency = calculateAverage(latencies);
     const last3Latencies = latencies.slice(-3);
     const highLatency = last3Latencies.every(l => l - 50 > averageLatency);
@@ -40,7 +43,7 @@ export function updateNeedsAcknowledgement() {
     for (let i = 0; i < state.IPList.length; i++) {
         const ipListItem = state.IPList[i];
         if (getIPStatus(ipListItem) === ipStatusCodes.DOWN) {
-            ipItem.needsAcknowledgement = true;
+            ipListItem.needsAcknowledgement = true;
         }
     }
 }

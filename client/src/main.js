@@ -61,14 +61,28 @@ function AddPingDataToIPList(data) {
         ipListItem.latencies.push({ latency: dataItem.latency, time: dataItem.time });
     }
 }
-// Refresh every 5 seconds
-setInterval(async () => {
-    await pingIPs(state.IPList.map(i => i.ip));
-    await refreshData();
-    updateNeedsAcknowledgement();
-    renderUI();
-    document.body.style.backgroundColor = getBodyColor();
-}, 5000);
+let refreshInProgress = false;
+
+async function scheduleRefresh() {
+    if (refreshInProgress) {
+        setTimeout(scheduleRefresh, 5000);
+        return;
+    }
+
+    refreshInProgress = true;
+    try {
+        await pingIPs(state.IPList.map(i => i.ip));
+        await refreshData();
+        updateNeedsAcknowledgement();
+        renderUI();
+        document.body.style.backgroundColor = getBodyColor();
+    } finally {
+        refreshInProgress = false;
+        setTimeout(scheduleRefresh, 5000);
+    }
+}
+
+scheduleRefresh();
 
 // Expose functions to global scope for onclick handlers
 window.addIP = addIP;
