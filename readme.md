@@ -6,9 +6,17 @@ This project was built with html5, css and vanilla js for the front end with nod
 
 ## Features
 
-* Track response times
-* Easy configuration
-* View weather with wunderground
+- Ping multiple IPv4 addresses
+- Display response-time charts
+- Retain recent results for approximately 15 minutes
+- Optional Weather Underground station weather display
+- Docker deployment
+
+## Requirements
+
+- Node.js 24+
+- Optional Weather Underground API key
+
 
 ## Installation
 
